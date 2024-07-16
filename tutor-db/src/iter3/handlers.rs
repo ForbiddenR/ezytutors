@@ -1,5 +1,9 @@
 use actix_web::{web, HttpResponse};
 
+use crate::db_access::post_new_course_db;
+
+use super::db_access::{get_course_details_db, get_courses_for_tutor_db};
+
 use super::models::Course;
 
 use super::state::AppState;
@@ -16,21 +20,27 @@ pub async fn post_new_course(
     new_course: web::Json<Course>,
     app_state: web::Data<AppState>,
 ) -> HttpResponse {
-    HttpResponse::Ok().json("success")
+    let course = post_new_course_db(&app_state.db, new_course.into()).await;
+    HttpResponse::Ok().json(course)
 }
 
 pub async fn get_courses_for_tutor(
     app_state: web::Data<AppState>,
-    params: web::Path<i32>,
+    params: web::Path<(i32,)>,
 ) -> HttpResponse {
-    HttpResponse::Ok().json("success")
+    let tuple = params.0;
+    let tutor_id = tuple;
+    let course = get_courses_for_tutor_db(&app_state.db, tutor_id).await;
+    HttpResponse::Ok().json(course)
 }
 
 pub async fn get_course_detail(
     app_state: web::Data<AppState>,
     params: web::Path<(i32, i32)>,
 ) -> HttpResponse {
-    HttpResponse::Ok().json("success")
+    let (tutor_id, course_id) = (params.0, params.1);
+    let course = get_course_details_db(&app_state.db, tutor_id, course_id).await;
+    HttpResponse::Ok().json(course)
 }
 
 #[cfg(test)]
@@ -57,7 +67,7 @@ mod tests {
             visit_count: Mutex::new(0),
             db: pool,
         });
-        let tutor_id = web::Path::from(1);
+        let tutor_id = web::Path::from((1,));
         let resp = get_courses_for_tutor(app_state, tutor_id).await;
         assert_eq!(resp.status(), StatusCode::OK);
     }
@@ -72,7 +82,7 @@ mod tests {
             visit_count: Mutex::new(0),
             db: pool,
         });
-        let params = web::Path::from((1, 2));
+        let params = web::Path::from((1, 1));
         let resp = get_course_detail(app_state, params).await;
         assert_eq!(resp.status(), StatusCode::OK);
     }
@@ -88,7 +98,7 @@ mod tests {
             db: pool,
         });
         let new_course_msg = Course {
-            course_id: 1,
+            course_id: 3,
             tutor_id: 1,
             course_name: "This is the next course".into(),
             posted_time: Some(NaiveDate::from_ymd(2020, 9, 17).and_hms(14, 01, 11)),

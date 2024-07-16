@@ -12,7 +12,7 @@ actix-rt = "2.7.0"
 dotenv = "0.15.0"
 
 # Database access
-sqlx = {version = "0.6.2", default_features = false, features = ["postgres","runtime-tokio-native-tls", "macros","chrono"]}
+sqlx = {version = "0.6.2", features = ["postgres","runtime-tokio-native-tls", "macros","chrono"]}
 
 
 # Data serialization library
